@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../viewmodels/shop_viewmodel.dart';
@@ -10,23 +11,37 @@ class CheckoutView extends StatelessWidget {
     final shopViewModel = context.read<ShopViewModel>();
     final created = await shopViewModel.createOrder();
     if (!context.mounted || !created) {
+      if (context.mounted && shopViewModel.errorMessage != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(shopViewModel.errorMessage!)),
+        );
+      }
       return;
     }
 
-    final paid = await shopViewModel.payOrder();
-    if (!context.mounted) {
+    final order = shopViewModel.currentOrder;
+    if (order == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo preparar el pedido para pago.')),
+      );
       return;
     }
 
-    final message = paid
-        ? shopViewModel.successMessage ?? 'Pago realizado correctamente.'
-        : shopViewModel.errorMessage ?? 'No se pudo procesar el pago.';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          shopViewModel.successMessage ?? 'Pedido creado. Selecciona el metodo de pago.',
+        ),
+      ),
+    );
 
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
-
-    if (paid) {
-      Navigator.popUntil(context, (route) => route.isFirst);
-    }
+    context.push(
+      '/payments/method',
+      extra: {
+        'orderId': order.id,
+        'amount': order.total,
+      },
+    );
   }
 
   @override
@@ -99,7 +114,7 @@ class CheckoutView extends StatelessWidget {
                     border: Border.all(color: const Color(0xFFF0DDCC)),
                   ),
                   child: const Text(
-                    'Cuando toques pagar se creara el pedido y se enviara el pago a tu API.',
+                    'Cuando toques continuar se creara el pedido y podras elegir transferencia o efectivo.',
                     style: TextStyle(
                       color: Color(0xFF8C5A3C),
                       height: 1.4,
@@ -127,7 +142,7 @@ class CheckoutView extends StatelessWidget {
                             ),
                           )
                         : const Text(
-                            'Pagar',
+                            'Continuar al pago',
                             style: TextStyle(fontWeight: FontWeight.w800),
                           ),
                   ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../viewmodels/auth_viewmodel.dart';
@@ -59,7 +60,7 @@ class _RegisterViewState extends State<RegisterView> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
 
     if (ok) {
-      Navigator.pop(context);
+      context.pop();
     }
   }
 
@@ -173,10 +174,10 @@ class _RegisterViewState extends State<RegisterView> {
                                         width: 66,
                                         height: 66,
                                         decoration: BoxDecoration(
-                                          color: Colors.white.withOpacity(0.16),
+                                          color: Colors.white.withValues(alpha: 0.16),
                                           borderRadius: BorderRadius.circular(22),
                                           border: Border.all(
-                                            color: Colors.white.withOpacity(0.16),
+                                            color: Colors.white.withValues(alpha: 0.16),
                                           ),
                                         ),
                                         child: const Icon(
@@ -531,3 +532,5 @@ class _BrandDot extends StatelessWidget {
     );
   }
 }
+
+

@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../models/product_model.dart';
 import '../viewmodels/auth_viewmodel.dart';
 import '../viewmodels/shop_viewmodel.dart';
-import 'cart_view.dart';
-import 'login_view.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -77,14 +76,18 @@ class _HomeViewState extends State<HomeView> {
               ],
             ),
             actions: [
+              IconButton(
+                onPressed: () {
+                  context.push('/payments');
+                },
+                icon: const Icon(Icons.receipt_long_outlined),
+                tooltip: 'Ver pagos',
+              ),
               Stack(
                 children: [
                   IconButton(
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute<void>(builder: (_) => const CartView()),
-                      );
+                      context.push('/cart');
                     },
                     icon: const Icon(Icons.shopping_bag_outlined),
                     tooltip: 'Ver carrito',
@@ -117,11 +120,7 @@ class _HomeViewState extends State<HomeView> {
                   if (!mounted) {
                     return;
                   }
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute<void>(builder: (_) => const LoginView()),
-                    (route) => false,
-                  );
+                  this.context.go('/login');
                 },
                 icon: const Icon(Icons.logout_rounded),
                 tooltip: 'Cerrar sesion',
@@ -224,7 +223,10 @@ class _HomeViewState extends State<HomeView> {
                                                 'Producto agregado.'
                                             : shopViewModel.errorMessage ??
                                                 'No se pudo agregar al carrito.';
-                                        ScaffoldMessenger.of(context).showSnackBar(
+                                        if (!this.context.mounted) {
+                                          return;
+                                        }
+                                        ScaffoldMessenger.of(this.context).showSnackBar(
                                           SnackBar(content: Text(message)),
                                         );
                                       },
@@ -273,10 +275,7 @@ class _HomeViewState extends State<HomeView> {
               totalItems: shopViewModel.totalItems,
               total: shopViewModel.subtotal,
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(builder: (_) => const CartView()),
-                );
+                context.push('/cart');
               },
             ),
           ),
@@ -319,7 +318,7 @@ class _HeroBanner extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.14),
+                    color: Colors.white.withValues(alpha: 0.14),
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: const Text(
@@ -353,7 +352,7 @@ class _HeroBanner extends StatelessWidget {
             width: 78,
             height: 78,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.16),
+              color: Colors.white.withValues(alpha: 0.16),
               borderRadius: BorderRadius.circular(26),
             ),
             child: const Icon(
@@ -434,7 +433,7 @@ class _ProductCard extends StatelessWidget {
                     : Image.network(
                         product.imagen,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
+                        errorBuilder: (contexto, error, stackTrace) => Container(
                           color: const Color(0xFFFFF1E5),
                           child: const Icon(
                             Icons.fastfood_rounded,
@@ -551,3 +550,7 @@ class _BottomCartBar extends StatelessWidget {
     );
   }
 }
+
+
+
+

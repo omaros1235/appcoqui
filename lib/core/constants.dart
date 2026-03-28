@@ -1,5 +1,15 @@
 import 'package:flutter/foundation.dart';
 
+class ApiConstants {
+  const ApiConstants._();
+
+  // URL base para endpoints versionados bajo /api.
+  static const String baseUrl = 'http://10.0.2.2:8000/api';
+
+  // Si tu backend de pagos usa JWT en lugar de Token, cambia a Bearer.
+  static const String esquemaAutorizacionPagos = 'Token';
+}
+
 class AppConstants {
   static String get baseUrl {
     if (kIsWeb) {

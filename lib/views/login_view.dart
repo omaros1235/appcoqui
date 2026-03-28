@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../viewmodels/auth_viewmodel.dart';
-import 'home_view.dart';
-import 'register_view.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -46,10 +45,7 @@ class _LoginViewState extends State<LoginView> {
       }
 
       if (loaded) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute<void>(builder: (_) => const HomeView()),
-        );
+        context.go('/home');
         return;
       }
     }
@@ -65,7 +61,7 @@ class _LoginViewState extends State<LoginView> {
     const card = Color(0xFFFFFCF8);
     const textPrimary = Color(0xFF4B2A18);
     const textSecondary = Color(0xFF8C5A3C);
-    const accent = Color(0xFFC63D2F);
+    const accent = Color.fromARGB(255, 165, 146, 22);
     const accentDark = Color(0xFF8E231D);
     const accentGold = Color(0xFFF2A007);
     const fieldFill = Color(0xFFF8E9DA);
@@ -157,9 +153,9 @@ class _LoginViewState extends State<LoginView> {
                                       height: 102,
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
-                                        color: Colors.white.withOpacity(0.16),
+                                        color: Colors.white.withValues(alpha: 0.16),
                                         border: Border.all(
-                                          color: Colors.white.withOpacity(0.18),
+                                          color: Colors.white.withValues(alpha: 0.18),
                                         ),
                                       ),
                                       child: Container(
@@ -340,13 +336,7 @@ class _LoginViewState extends State<LoginView> {
                                       onPressed: authViewModel.isLoading
                                           ? null
                                           : () {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute<void>(
-                                                  builder: (_) =>
-                                                      const RegisterView(),
-                                                ),
-                                              );
+                                              context.push('/register');
                                             },
                                       style: TextButton.styleFrom(
                                         foregroundColor: textSecondary,
@@ -442,3 +432,4 @@ class _BrandDot extends StatelessWidget {
     );
   }
 }
+
