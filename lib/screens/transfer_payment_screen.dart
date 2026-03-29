@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -27,6 +28,7 @@ class _TransferPaymentScreenState extends State<TransferPaymentScreen> {
   final _cuentaController = TextEditingController();
   final _referenciaController = TextEditingController();
   DateTime? _fechaTransferencia;
+  TransferReceiptFile? _comprobante;
 
   @override
   void dispose() {
@@ -51,6 +53,27 @@ class _TransferPaymentScreenState extends State<TransferPaymentScreen> {
     }
   }
 
+  Future<void> _seleccionarComprobante() async {
+    final resultado = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const ['png', 'jpg', 'jpeg', 'pdf', 'webp'],
+      withData: true,
+    );
+
+    final archivo = resultado?.files.single;
+    if (archivo == null) {
+      return;
+    }
+
+    setState(() {
+      _comprobante = TransferReceiptFile(
+        name: archivo.name,
+        bytes: archivo.bytes,
+        path: archivo.path,
+      );
+    });
+  }
+
   Future<void> _registrarTransferencia() async {
     if (!_formKey.currentState!.validate() || _fechaTransferencia == null) {
       if (_fechaTransferencia == null) {
@@ -70,6 +93,7 @@ class _TransferPaymentScreenState extends State<TransferPaymentScreen> {
         accountNumber: _cuentaController.text.trim(),
         transactionReference: _referenciaController.text.trim(),
         transferDate: _fechaTransferencia!,
+        transferReceipt: _comprobante,
       ),
     );
 
@@ -146,10 +170,23 @@ class _TransferPaymentScreenState extends State<TransferPaymentScreen> {
                   TextFormField(
                     controller: _referenciaController,
                     decoration: const InputDecoration(
-                      labelText: 'Referencia o comprobante',
+                      labelText: 'Referencia de transferencia',
                       prefixIcon: Icon(Icons.receipt_long_outlined),
                     ),
                     validator: _validarRequerido,
+                  ),
+                  const SizedBox(height: 18),
+                  _ComprobanteField(
+                    fileName: _comprobante?.name,
+                    isLoading: provider.isLoading,
+                    onPick: _seleccionarComprobante,
+                    onClear: _comprobante == null
+                        ? null
+                        : () {
+                            setState(() {
+                              _comprobante = null;
+                            });
+                          },
                   ),
                   const SizedBox(height: 16),
                   InkWell(
@@ -193,6 +230,110 @@ class _TransferPaymentScreenState extends State<TransferPaymentScreen> {
       return 'Este campo es obligatorio.';
     }
     return null;
+  }
+}
+
+class _ComprobanteField extends StatelessWidget {
+  const _ComprobanteField({
+    required this.fileName,
+    required this.isLoading,
+    required this.onPick,
+    required this.onClear,
+  });
+
+  final String? fileName;
+  final bool isLoading;
+  final VoidCallback onPick;
+  final VoidCallback? onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(left: 12, bottom: 8),
+          child: Text(
+            'Comprobante',
+            style: TextStyle(
+              color: Color(0xFF7C5C49),
+              fontSize: 16,
+            ),
+          ),
+        ),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: const Color(0xFF8A6A57)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.only(top: 2),
+                    child: Icon(
+                      Icons.attach_file_rounded,
+                      color: Color(0xFF5B3A29),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      fileName ?? 'Adjunta PNG, JPG, JPEG, WEBP o PDF',
+                      style: TextStyle(
+                        color: fileName == null
+                            ? const Color(0xFF9B7B68)
+                            : const Color(0xFF4B2A18),
+                        fontWeight: fileName == null ? FontWeight.w400 : FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: isLoading ? null : onPick,
+                    icon: const Icon(Icons.upload_file_rounded),
+                    label: Text(fileName == null ? 'Seleccionar archivo' : 'Cambiar archivo'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFFA34E41),
+                      side: const BorderSide(color: Color(0xFFA34E41)),
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                  ),
+                  if (onClear != null)
+                    OutlinedButton.icon(
+                      onPressed: isLoading ? null : onClear,
+                      icon: const Icon(Icons.close_rounded),
+                      label: const Text('Quitar'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFFA34E41),
+                        side: const BorderSide(color: Color(0xFFA34E41)),
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }
 

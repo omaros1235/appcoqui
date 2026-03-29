@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 enum MetodoPago {
   transferencia,
   efectivo;
@@ -186,6 +188,7 @@ class TransferPaymentRequest {
     required this.accountNumber,
     required this.transactionReference,
     required this.transferDate,
+    this.transferReceipt,
   });
 
   final int order;
@@ -194,6 +197,7 @@ class TransferPaymentRequest {
   final String accountNumber;
   final String transactionReference;
   final DateTime transferDate;
+  final TransferReceiptFile? transferReceipt;
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
@@ -205,6 +209,18 @@ class TransferPaymentRequest {
       'transfer_date': transferDate.toIso8601String().split('T').first,
     };
   }
+}
+
+class TransferReceiptFile {
+  const TransferReceiptFile({
+    required this.name,
+    this.bytes,
+    this.path,
+  });
+
+  final String name;
+  final Uint8List? bytes;
+  final String? path;
 }
 
 class CashPaymentRequest {

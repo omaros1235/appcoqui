@@ -182,8 +182,7 @@ class _HomeViewState extends State<HomeView> {
                                       decoration: BoxDecoration(
                                         color: Colors.white,
                                         borderRadius: BorderRadius.circular(28),
-                                        border:
-                                            Border.all(color: const Color(0xFFF0DDCC)),
+                                        border: Border.all(color: const Color(0xFFF0DDCC)),
                                       ),
                                       child: Text(
                                         shopViewModel.productsErrorMessage ??
@@ -198,8 +197,7 @@ class _HomeViewState extends State<HomeView> {
                                   ],
                                 )
                               : GridView.builder(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(20, 0, 20, 120),
+                                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 120),
                                   gridDelegate:
                                       const SliverGridDelegateWithFixedCrossAxisCount(
                                     crossAxisCount: 2,
@@ -210,17 +208,21 @@ class _HomeViewState extends State<HomeView> {
                                   itemCount: products.length,
                                   itemBuilder: (context, index) {
                                     final product = products[index];
+                                    final cantidadEnCarrito =
+                                        shopViewModel.quantityForProduct(product.id);
+                                    final isBusy = shopViewModel.isProductUpdating(product.id);
+
                                     return _ProductCard(
                                       product: product,
+                                      quantityInCart: cantidadEnCarrito,
+                                      isBusy: isBusy,
                                       onAdd: () async {
-                                        final ok =
-                                            await shopViewModel.addToCart(product);
+                                        final ok = await shopViewModel.addToCart(product);
                                         if (!context.mounted) {
                                           return;
                                         }
                                         final message = ok
-                                            ? shopViewModel.successMessage ??
-                                                'Producto agregado.'
+                                            ? shopViewModel.successMessage ?? 'Producto agregado.'
                                             : shopViewModel.errorMessage ??
                                                 'No se pudo agregar al carrito.';
                                         if (!this.context.mounted) {
@@ -230,6 +232,42 @@ class _HomeViewState extends State<HomeView> {
                                           SnackBar(content: Text(message)),
                                         );
                                       },
+                                      onIncrement: () async {
+                                        final ok = await shopViewModel.setProductQuantity(
+                                          product,
+                                          cantidadEnCarrito + 1,
+                                        );
+                                        if (!context.mounted || ok) {
+                                          return;
+                                        }
+                                        ScaffoldMessenger.of(this.context).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              shopViewModel.errorMessage ??
+                                                  'No se pudo actualizar el carrito.',
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      onDecrement: cantidadEnCarrito == 0
+                                          ? null
+                                          : () async {
+                                              final ok = await shopViewModel.setProductQuantity(
+                                                product,
+                                                cantidadEnCarrito - 1,
+                                              );
+                                              if (!context.mounted || ok) {
+                                                return;
+                                              }
+                                              ScaffoldMessenger.of(this.context).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    shopViewModel.errorMessage ??
+                                                        'No se pudo actualizar el carrito.',
+                                                  ),
+                                                ),
+                                              );
+                                            },
                                     );
                                   },
                                 ),
@@ -399,11 +437,19 @@ class _CategoryChip extends StatelessWidget {
 class _ProductCard extends StatelessWidget {
   const _ProductCard({
     required this.product,
+    required this.quantityInCart,
+    required this.isBusy,
     required this.onAdd,
+    required this.onIncrement,
+    required this.onDecrement,
   });
 
   final ProductModel product;
+  final int quantityInCart;
+  final bool isBusy;
   final VoidCallback onAdd;
+  final VoidCallback onIncrement;
+  final VoidCallback? onDecrement;
 
   @override
   Widget build(BuildContext context) {
@@ -469,21 +515,100 @@ class _ProductCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 10),
+                if (quantityInCart > 0) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF1E5),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'En carrito: $quantityInCart',
+                            style: const TextStyle(
+                              color: Color(0xFF8C5A3C),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        _MiniQtyButton(
+                          icon: Icons.remove_rounded,
+                          onTap: isBusy ? null : onDecrement,
+                        ),
+                        SizedBox(
+                          width: 28,
+                          child: Text(
+                            '$quantityInCart',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Color(0xFF4B2A18),
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                        _MiniQtyButton(
+                          icon: Icons.add_rounded,
+                          onTap: isBusy ? null : onIncrement,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                ],
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton(
-                    onPressed: onAdd,
+                    onPressed: isBusy ? null : (quantityInCart == 0 ? onAdd : onIncrement),
                     style: FilledButton.styleFrom(
                       backgroundColor: const Color(0xFFC63D2F),
                       foregroundColor: Colors.white,
                     ),
-                    child: const Text('Agregar al carrito'),
+                    child: Text(
+                      isBusy
+                          ? 'Actualizando...'
+                          : quantityInCart == 0
+                              ? 'Agregar al carrito'
+                              : 'Agregar uno mas',
+                    ),
                   ),
                 ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _MiniQtyButton extends StatelessWidget {
+  const _MiniQtyButton({
+    required this.icon,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(999),
+      child: Container(
+        width: 28,
+        height: 28,
+        decoration: BoxDecoration(
+          color: const Color(0xFFC63D2F),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Icon(
+          icon,
+          size: 18,
+          color: Colors.white,
+        ),
       ),
     );
   }
@@ -550,7 +675,3 @@ class _BottomCartBar extends StatelessWidget {
     );
   }
 }
-
-
-
-

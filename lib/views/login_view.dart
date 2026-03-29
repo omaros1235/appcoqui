@@ -60,7 +60,7 @@ class _LoginViewState extends State<LoginView> {
     const background = Color(0xFFFFF7EF);
     const card = Color(0xFFFFFCF8);
     const textPrimary = Color(0xFF4B2A18);
-    const textSecondary = Color(0xFF8C5A3C);
+    const textSecondary = Color.fromARGB(255, 60, 140, 80);
     const accent = Color.fromARGB(255, 165, 146, 22);
     const accentDark = Color(0xFF8E231D);
     const accentGold = Color(0xFFF2A007);

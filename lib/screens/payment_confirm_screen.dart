@@ -146,6 +146,12 @@ class _PaymentConfirmScreenState extends State<PaymentConfirmScreen> {
                                     label: 'Referencia',
                                     value: pago.transactionReference!,
                                   ),
+                                if (pago.transferReceipt != null &&
+                                    pago.transferReceipt!.isNotEmpty)
+                                  const _DatoPago(
+                                    label: 'Comprobante',
+                                    value: 'Archivo adjunto',
+                                  ),
                                 if (pago.changeGiven != null)
                                   _DatoPago(
                                     label: 'Cambio',

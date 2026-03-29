@@ -19,11 +19,45 @@ class PaymentService {
 
   Future<Payment> createTransferPayment(TransferPaymentRequest request) async {
     try {
-      final response = await _client.post(
+      final multipartRequest = http.MultipartRequest(
+        'POST',
         Uri.parse('${ApiConstants.baseUrl}/payments/transfer/'),
-        headers: await _headersAutorizados(json: true),
-        body: jsonEncode(request.toJson()),
       );
+      multipartRequest.headers.addAll(await _headersAutorizados());
+      multipartRequest.fields.addAll(
+        <String, String>{
+          'order': request.order.toString(),
+          'amount': request.amount.toString(),
+          'bank_name': request.bankName,
+          'account_number': request.accountNumber,
+          'transaction_reference': request.transactionReference,
+          'transfer_date': request.transferDate.toIso8601String().split('T').first,
+        },
+      );
+
+      final receipt = request.transferReceipt;
+      if (receipt != null) {
+        if (receipt.bytes != null) {
+          multipartRequest.files.add(
+            http.MultipartFile.fromBytes(
+              'transfer_receipt',
+              receipt.bytes!,
+              filename: receipt.name,
+            ),
+          );
+        } else if (receipt.path != null && receipt.path!.isNotEmpty) {
+          multipartRequest.files.add(
+            await http.MultipartFile.fromPath(
+              'transfer_receipt',
+              receipt.path!,
+              filename: receipt.name,
+            ),
+          );
+        }
+      }
+
+      final streamedResponse = await multipartRequest.send();
+      final response = await http.Response.fromStream(streamedResponse);
 
       final decoded = _decodeResponse(response);
       if (decoded is! Map<String, dynamic>) {

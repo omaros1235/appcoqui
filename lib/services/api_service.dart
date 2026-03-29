@@ -1,9 +1,9 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
+import '../core/constants.dart';
 import '../models/cart_model.dart';
 import '../models/order_model.dart';
 import '../models/product_model.dart';
@@ -18,22 +18,7 @@ class ApiService {
   final http.Client _client;
   final FlutterSecureStorage _secureStorage;
 
-  String get _baseUrl {
-    if (kIsWeb) {
-      return 'http://127.0.0.1:8000';
-    }
-
-    switch (defaultTargetPlatform) {
-      case TargetPlatform.android:
-        return 'http://10.0.2.2:8000';
-      case TargetPlatform.iOS:
-      case TargetPlatform.macOS:
-      case TargetPlatform.windows:
-      case TargetPlatform.linux:
-      case TargetPlatform.fuchsia:
-        return 'http://127.0.0.1:8000';
-    }
-  }
+  String get _baseUrl => AppConstants.baseUrl;
 
   Future<List<ProductModel>> getProductos() async {
     final response = await _client.get(
@@ -120,7 +105,7 @@ class ApiService {
   }
 
   Future<Map<String, String>> _authorizedHeaders({bool json = false}) async {
-    final token = await _secureStorage.read(key: 'access_token');
+    final token = await _secureStorage.read(key: AppConstants.accessTokenKey);
     if (token == null || token.isEmpty) {
       throw ApiException('No se encontro un token de acceso para continuar.');
     }

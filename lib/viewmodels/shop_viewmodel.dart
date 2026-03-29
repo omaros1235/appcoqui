@@ -10,6 +10,7 @@ class ShopViewModel extends ChangeNotifier {
   ShopViewModel({ApiService? apiService}) : _apiService = apiService ?? ApiService();
 
   final ApiService _apiService;
+  final Set<int> _updatingProductIds = <int>{};
 
   bool isLoadingProducts = false;
   bool isLoadingCart = false;
@@ -25,6 +26,26 @@ class ShopViewModel extends ChangeNotifier {
   int get totalItems => cart.items.fold(0, (sum, item) => sum + item.cantidad);
 
   double get subtotal => cart.total;
+
+  int quantityForProduct(int productId) {
+    for (final item in cart.items) {
+      if (item.producto.id == productId) {
+        return item.cantidad;
+      }
+    }
+    return 0;
+  }
+
+  CartItemModel? cartItemForProduct(int productId) {
+    for (final item in cart.items) {
+      if (item.producto.id == productId) {
+        return item;
+      }
+    }
+    return null;
+  }
+
+  bool isProductUpdating(int productId) => _updatingProductIds.contains(productId);
 
   Future<void> loadProducts() async {
     isLoadingProducts = true;
@@ -69,21 +90,38 @@ class ShopViewModel extends ChangeNotifier {
   Future<bool> addToCart(ProductModel product, {int cantidad = 1}) async {
     errorMessage = null;
     successMessage = null;
+    _updatingProductIds.add(product.id);
     notifyListeners();
 
     try {
-      cart = await _apiService.agregarAlCarrito(
+      await _apiService.agregarAlCarrito(
         productoId: product.id,
         cantidad: cantidad,
       );
-      successMessage = '${product.nombre} agregado al carrito.';
-      notifyListeners();
+      cart = await _apiService.getCarrito();
+      successMessage = cantidad > 0
+          ? '${product.nombre} agregado al carrito.'
+          : '${product.nombre} actualizado en el carrito.';
       return true;
     } catch (error) {
       errorMessage = error.toString();
-      notifyListeners();
       return false;
+    } finally {
+      _updatingProductIds.remove(product.id);
+      notifyListeners();
     }
+  }
+
+  Future<bool> setProductQuantity(ProductModel product, int nuevaCantidad) async {
+    final item = cartItemForProduct(product.id);
+    if (item == null) {
+      if (nuevaCantidad <= 0) {
+        return true;
+      }
+      return addToCart(product, cantidad: nuevaCantidad);
+    }
+
+    return updateCartItem(item, nuevaCantidad);
   }
 
   Future<bool> updateCartItem(CartItemModel item, int cantidad) async {

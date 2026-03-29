@@ -1,22 +1,39 @@
 import 'package:flutter/foundation.dart';
 
-class ApiConstants {
-  const ApiConstants._();
+class AppEnvironment {
+  const AppEnvironment._();
 
-  // URL base para endpoints versionados bajo /api.
-  static const String baseUrl = 'http://10.0.2.2:8000/api';
-
-  // Si tu backend de pagos usa JWT en lugar de Token, cambia a Bearer.
-  static const String esquemaAutorizacionPagos = 'Token';
-}
-
-class AppConstants {
-  static String get baseUrl {
+  static String get host {
     if (kIsWeb) {
       return 'http://127.0.0.1:8000';
     }
-    return 'http://10.0.2.2:8000';
+
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return 'http://10.0.2.2:8000';
+      case TargetPlatform.iOS:
+      case TargetPlatform.macOS:
+      case TargetPlatform.windows:
+      case TargetPlatform.linux:
+      case TargetPlatform.fuchsia:
+        return 'http://127.0.0.1:8000';
+    }
   }
+
+  static String get apiHost => '$host/api';
+}
+
+class ApiConstants {
+  const ApiConstants._();
+
+  static String get baseUrl => AppEnvironment.apiHost;
+
+  // Si tu backend de pagos usa JWT en lugar de Token, cambia a Bearer.
+  static const String esquemaAutorizacionPagos = 'Bearer';
+}
+
+class AppConstants {
+  static String get baseUrl => AppEnvironment.host;
 
   static const String registerEndpoint = '/register/';
   static const String loginEndpoint = '/login/';
